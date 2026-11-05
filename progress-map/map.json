@@ -1,0 +1,239 @@
+{
+  "title": "進捗マップ（見本）",
+  "updated": "2026-11-05",
+  "types": ["経緯", "方針", "進捗", "結果", "課題", "次回"],
+  "staff": [
+    {
+      "id": "haru",
+      "name": "ハル",
+      "kana": "はる",
+      "domain": "ai",
+      "skill": "Python",
+      "lead": true,
+      "now": "2",
+      "goal": "3",
+      "resume": "Python と OpenCV で写真から物を数えるツールを開発（悪い撮影条件20通りで検証）",
+      "tier": "must",
+      "reason": "架空のA社・B社の必須「Python か C++」",
+      "order": 1,
+      "hired": "2026-11-01"
+    },
+    {
+      "id": "sora",
+      "name": "ソラ",
+      "kana": "そら",
+      "domain": "robot",
+      "skill": "ROS 2",
+      "lead": true,
+      "now": "1",
+      "goal": "2",
+      "resume": "ROS 2 でトピック・サービス・launch を実装し、turtlesim を P 制御で動かした",
+      "tier": "must",
+      "reason": "架空のB社の必須「ROS 2 での開発経験」、A社の歓迎",
+      "order": 2,
+      "hired": "2026-11-01"
+    },
+    {
+      "id": "mio",
+      "name": "ミオ",
+      "kana": "みお",
+      "domain": "github",
+      "skill": "Git / GitHub",
+      "lead": true,
+      "now": "2",
+      "goal": "3",
+      "resume": "非公開のリポジトリを2つ運用（README・LOG.md・テスト）",
+      "tier": "must",
+      "reason": "架空のA社の必須「Git を使ったチーム開発」",
+      "order": 3,
+      "hired": "2026-11-01"
+    },
+    {
+      "id": "kou",
+      "name": "コウ",
+      "kana": "こう",
+      "domain": "github",
+      "skill": "コンテナ（Docker）・CI/CD",
+      "lead": false,
+      "now": "0",
+      "goal": "2",
+      "resume": "これから（最初は push のたびに pytest を動かす）",
+      "tier": "want",
+      "reason": "架空のB社の歓迎「Docker、CI/CD」",
+      "order": 4,
+      "hired": "2026-11-01"
+    }
+  ],
+  "categories": [
+    { "id": "ros2", "name": "ROS 2 の学習", "owner": "sora" },
+    { "id": "tool", "name": "作例（数えるツール）", "owner": "haru" },
+    { "id": "github", "name": "GitHub・公開の準備", "owner": "mio" }
+  ],
+  "nodes": [
+    {
+      "id": "r-bg1",
+      "cat": "ros2",
+      "type": "経緯",
+      "date": "2026-10-01",
+      "title": "求人を2件読み、必須要件を書き出した",
+      "detail": "架空のA社・B社。2件とも「Python か C++」が必須。ROS 2 は1件で必須・1件で歓迎、Git は1件で必須だった。",
+      "ref": "notes/求人のメモ.md"
+    },
+    {
+      "id": "r-p1",
+      "cat": "ros2",
+      "type": "方針",
+      "title": "公式チュートリアルの順に、小さく作って確かめる",
+      "detail": "1回1時間。動いたら LOG.md に、詰まったことと直し方まで書く。"
+    },
+    {
+      "id": "r-pr1",
+      "cat": "ros2",
+      "type": "進捗",
+      "date": "2026-10-20",
+      "title": "トピック・サービス・launch まで済み",
+      "ref": "~/dev/ros2-practice/LOG.md"
+    },
+    {
+      "id": "r-r1",
+      "cat": "ros2",
+      "type": "結果",
+      "date": "2026-10-27",
+      "title": "turtlesim を P 制御で5つの点まで動かせた",
+      "detail": "どの点も誤差 0.05 以内。テスト3件を実行して3件とも通った。"
+    },
+    {
+      "id": "r-i1",
+      "cat": "ros2",
+      "type": "課題",
+      "title": "C++ のノードが起動してすぐ落ちる",
+      "detail": "古い Visual C++ ランタイムが原因とみられる。更新には管理者の操作が要る。",
+      "waiting": "本人"
+    },
+    {
+      "id": "r-n1",
+      "cat": "ros2",
+      "type": "次回",
+      "title": "tf2 で2匹の亀の座標をつなぐ",
+      "who": "sora"
+    },
+    {
+      "id": "t-p1",
+      "cat": "tool",
+      "type": "方針",
+      "title": "写真から物を数えるツールを作例にする",
+      "detail": "自分で撮った写真を使えば、データのライセンスを気にしなくてよい。勤め先の仕事とも違う題材にする。"
+    },
+    {
+      "id": "t-pr1",
+      "cat": "tool",
+      "type": "進捗",
+      "date": "2026-10-25",
+      "title": "OpenCV で数えて CSV に出せた",
+      "ref": "~/dev/count-tool/README.md"
+    },
+    {
+      "id": "t-r1",
+      "cat": "tool",
+      "type": "結果",
+      "date": "2026-11-01",
+      "title": "悪い撮影条件20通りのうち15通りで正しく数えた",
+      "detail": "暗い・斜め・影ありなどを自作の画像で試した。pytest は12件すべて通過。"
+    },
+    {
+      "id": "t-i1",
+      "cat": "tool",
+      "type": "課題",
+      "title": "重なった物を1つに数えてしまう",
+      "detail": "失敗した5通りのうち4通りが重なり。"
+    },
+    {
+      "id": "t-n1",
+      "cat": "tool",
+      "type": "次回",
+      "title": "重なりを分ける処理を試し、テストを足す",
+      "who": "haru"
+    },
+    {
+      "id": "g-p1",
+      "cat": "github",
+      "type": "方針",
+      "title": "非公開で積み上げてから公開する",
+      "detail": "README と LOG.md を毎回書く。公開するかどうかは本人が決める。"
+    },
+    {
+      "id": "g-pr1",
+      "cat": "github",
+      "type": "進捗",
+      "date": "2026-11-02",
+      "title": "2つのリポジトリを非公開で作った",
+      "detail": "ros2-practice と count-tool。"
+    },
+    {
+      "id": "g-i1",
+      "cat": "github",
+      "type": "課題",
+      "title": "公開してよいかを決める",
+      "detail": "勤め先の就業規則（社外への発信・副業）を確かめる。公開の前にコミットのメールを noreply に替える。",
+      "waiting": "本人"
+    },
+    {
+      "id": "g-n1",
+      "cat": "github",
+      "type": "次回",
+      "title": "push のたびに pytest を動かす（GitHub Actions）",
+      "who": "kou"
+    },
+    {
+      "id": "g-n2",
+      "cat": "github",
+      "type": "次回",
+      "title": "公開の前に、秘密情報と個人情報を確かめる",
+      "detail": "git log と全ファイルで、トークン・鍵・本名・メール・PC のユーザー名を探す。",
+      "who": "mio"
+    }
+  ],
+  "links": [
+    ["r-bg1", "r-p1"],
+    ["r-bg1", "t-p1"],
+    ["r-bg1", "g-p1"],
+    ["r-p1", "r-pr1"],
+    ["r-pr1", "r-r1"],
+    ["r-pr1", "r-i1"],
+    ["r-r1", "r-n1"],
+    ["r-i1", "r-n1"],
+    ["t-p1", "t-pr1"],
+    ["t-pr1", "t-r1"],
+    ["t-r1", "t-i1"],
+    ["t-i1", "t-n1"],
+    ["t-r1", "g-n1"],
+    ["g-p1", "g-pr1"],
+    ["g-pr1", "g-i1"],
+    ["g-pr1", "g-n1"],
+    ["g-i1", "g-n2"]
+  ],
+  "domains": [
+    { "id": "ai", "name": "AI", "lead": "haru" },
+    { "id": "robot", "name": "ロボット", "lead": "sora" },
+    { "id": "github", "name": "GitHub", "lead": "mio" }
+  ],
+  "tiers": [
+    { "id": "must", "name": "① 必須要件", "note": "求人の必須要件に出てくるスキル。最優先で採用" },
+    { "id": "want", "name": "② 歓迎・仕事内容", "note": "歓迎要件や仕事内容によく出てくるスキル" },
+    { "id": "own", "name": "③ 独自テーマ", "note": "自分の強みと、やりたいこと" }
+  ],
+  "postings": [
+    {
+      "id": "a",
+      "name": "架空のA社（ロボットエンジニア）",
+      "must": "Python か C++、Linux、Git を使ったチーム開発",
+      "want": "ROS 2、シミュレーション"
+    },
+    {
+      "id": "b",
+      "name": "架空のB社（自律移動ロボット）",
+      "must": "ROS 2 での開発経験、Python か C++",
+      "want": "Docker、CI/CD"
+    }
+  ]
+}

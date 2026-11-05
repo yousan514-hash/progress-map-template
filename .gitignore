@@ -1,0 +1,11 @@
+# build.ps1 で作るページ（map.json と template.html から毎回作り直す）
+progress-map/index.html
+
+# 秘密情報
+.env
+*.key
+*.pem
+
+# OS が作るファイル
+Thumbs.db
+.DS_Store

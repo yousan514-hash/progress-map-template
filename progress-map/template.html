@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>進捗マップ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* 地図の考え方: 左から右へ「経緯→方針→進捗→結果→課題→次回」、上から下へカテゴリ。線がつながり */
+  --bg: #f3f5f7;
+  --surface: #ffffff;
+  --ink: #17202a;
+  --muted: #5b6979;
+  --line: #d4dbe3;
+  --accent: #1d5f8f;
+  --edge: #9fb0c2;
+  --t0: #687587; --t1: #5a4fb3; --t2: #1f6db5; --t3: #2b8455; --t4: #c2410c; --t5: #9a6406;
+  --wait: #b42318; --wait-bg: #fdeceb;
+  --font-display: "Zen Kaku Gothic New", "Yu Gothic UI", "Hiragino Sans", "Meiryo", sans-serif;
+  --font-body: "Noto Sans JP", "Yu Gothic UI", "Hiragino Sans", "Meiryo", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10151b; --surface: #19212a; --ink: #e5ecf2; --muted: #9aa7b5; --line: #2b3745; --accent: #6db3e8; --edge: #4a5a6c;
+    --t0: #9ba6b4; --t1: #a99ff2; --t2: #6fb1f0; --t3: #5cc28a; --t4: #f28b5f; --t5: #e2b24c;
+    --wait: #ff8f86; --wait-bg: #3a201e;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10151b; --surface: #19212a; --ink: #e5ecf2; --muted: #9aa7b5; --line: #2b3745; --accent: #6db3e8; --edge: #4a5a6c;
+  --t0: #9ba6b4; --t1: #a99ff2; --t2: #6fb1f0; --t3: #5cc28a; --t4: #f28b5f; --t5: #e2b24c;
+  --wait: #ff8f86; --wait-bg: #3a201e;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+.waitlist button, .staff, .card, .chip, .rel button, .clear { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 14px; line-height: 1.55; }
+.page { padding: 20px max(16px, 2vw) 40px; display: grid; gap: 18px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+h1 { font-size: 26px; letter-spacing: .02em; }
+h2 { font-size: 16px; }
+.meta { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+header.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+
+/* 上の2つのまとめ */
+.summary { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(320px, 2fr); gap: 14px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.panel h2 { margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.count { font-family: var(--font-body); font-size: 12px; font-weight: 700; color: var(--wait); background: var(--wait-bg); border-radius: 999px; padding: 0 8px; }
+.waitlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.waitlist button { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; width: 100%; padding: 6px 8px; border-radius: 6px; border-left: 3px solid var(--wait); background: var(--wait-bg); }
+.waitlist button:focus-visible, .card:focus-visible, .chip:focus-visible, .staff:focus-visible, .rel button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.waitlist .cat { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.waitlist .ttl { font-weight: 500; }
+.tier { display: grid; gap: 6px; }
+.tier + .tier { margin-top: 12px; }
+.tier h3 { font-size: 14px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.tier h3 small { font-family: var(--font-body); font-weight: 400; font-size: 12px; color: var(--muted); }
+.staff .sk { font-weight: 700; font-size: 13px; }
+.staff .lv { font-size: 12px; font-variant-numeric: tabular-nums; }
+.staff .lv b { color: var(--accent); }
+.staff .why { font-size: 11.5px; color: var(--muted); }
+.staff .tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.posting { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.posting li { border-left: 3px solid var(--line); padding-left: 8px; }
+.posting .pn { font-weight: 700; font-size: 13px; }
+.posting .pr { font-size: 12px; color: var(--muted); }
+.posting .pr b { color: var(--wait); font-weight: 700; }
+.staffgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.staff { all: unset; box-sizing: border-box; cursor: pointer; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: grid; gap: 2px; background: var(--surface); }
+.staff:hover { border-color: var(--accent); }
+.staff .nm { font-family: var(--font-display); font-weight: 700; font-size: 16px; }
+.staff .nm small { font-family: var(--font-body); font-weight: 400; font-size: 11px; color: var(--muted); margin-left: 4px; }
+.staff .ct { font-size: 12px; color: var(--accent); font-weight: 500; }
+.staff .nx { font-size: 12px; color: var(--muted); }
+
+/* 地図 */
+.workarea { display: flex; gap: 14px; align-items: flex-start; }
+.mapcol { flex: 1; min-width: 0; display: grid; gap: 8px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 4px; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.legend .dash { width: 22px; height: 0; border-top: 2px dashed var(--edge); border-radius: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { all: unset; box-sizing: border-box; cursor: pointer; font-size: 12px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); }
+.chip[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.scroller { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.map { position: relative; display: grid; grid-template-columns: 150px repeat(6, minmax(158px, 1fr)); min-width: 1130px; }
+.map svg { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.colhead { position: sticky; top: 0; font-family: var(--font-display); font-weight: 700; font-size: 13px; padding: 8px 10px; border-bottom: 2px solid currentColor; background: var(--surface); z-index: 1; }
+.rowhead { padding: 10px; border-top: 1px solid var(--line); display: grid; align-content: start; gap: 4px; }
+.rowhead .rn { font-family: var(--font-display); font-weight: 700; font-size: 14px; }
+.rowhead .ow { font-size: 12px; color: var(--accent); }
+.rowhead .st { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cell { padding: 8px 10px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; position: relative; z-index: 1; }
+.card { all: unset; box-sizing: border-box; cursor: pointer; position: relative; display: grid; gap: 3px; padding: 7px 9px 7px 11px; border-radius: 7px; border: 1px solid var(--line); background: var(--surface); font-size: 12.5px; line-height: 1.45; transition: opacity .15s, box-shadow .15s; }
+.card::before { content: ""; position: absolute; left: 0; top: 6px; bottom: 6px; width: 4px; border-radius: 2px; background: var(--tc); }
+.card .ttl { font-weight: 500; }
+.card .dt { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.badges { display: flex; flex-wrap: wrap; gap: 4px; }
+.badge { font-size: 10.5px; padding: 0 6px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.badge.wait { border-color: var(--wait); color: var(--wait); background: var(--wait-bg); font-weight: 700; }
+.badge.who { border-color: var(--accent); color: var(--accent); }
+.map.focus .card { opacity: .28; }
+.map.focus .card.on { opacity: 1; }
+.card.sel { box-shadow: 0 0 0 2px var(--accent); }
+path.edge { fill: none; stroke: var(--edge); stroke-width: 1.4; opacity: .7; }
+path.edge.cross { stroke-dasharray: 5 4; }
+.map.focus path.edge { opacity: .08; }
+.map.focus path.edge.on { opacity: 1; stroke: var(--accent); stroke-width: 2.2; }
+marker path { fill: var(--edge); }
+marker#arr-on path { fill: var(--accent); }
+
+/* 詳細 */
+.detail { width: 320px; flex: none; position: sticky; top: 12px; }
+.detail .pill { display: inline-block; font-size: 12px; font-weight: 700; color: #fff; background: var(--tc, var(--accent)); border-radius: 4px; padding: 0 8px; }
+.detail h3 { font-size: 17px; margin: 6px 0 4px; }
+.detail p { margin: 4px 0; }
+.detail .ref { font-family: Consolas, "Cascadia Mono", monospace; font-size: 12px; color: var(--muted); word-break: break-all; }
+.rel { margin-top: 8px; display: grid; gap: 4px; }
+.rel h4 { margin: 6px 0 2px; font-size: 12px; color: var(--muted); font-weight: 500; }
+.rel button { all: unset; box-sizing: border-box; cursor: pointer; font-size: 12.5px; padding: 3px 8px; border-radius: 5px; border-left: 3px solid var(--tc); background: var(--bg); }
+.hint { color: var(--muted); font-size: 13px; }
+.clear { all: unset; box-sizing: border-box; cursor: pointer; font-size: 12px; color: var(--accent); margin-top: 8px; display: inline-block; }
+
+@media (max-width: 1000px) {
+  .workarea { flex-direction: column; }
+  .detail { width: 100%; position: static; }
+}
+@media (max-width: 700px) {
+  .summary { grid-template-columns: 1fr; }
+  h1 { font-size: 22px; }
+}
+@media (prefers-reduced-motion: reduce) { .card { transition: none; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <h1>進捗マップ</h1>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <section class="summary">
+    <div class="panel">
+      <h2>あなた待ち <span class="count" id="waitcount"></span></h2>
+      <ul class="waitlist" id="waitlist"></ul>
+    </div>
+    <div class="panel">
+      <h2>根拠にした求人</h2>
+      <ul class="posting" id="postings"></ul>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>AI社員（求人の要件から採用）</h2>
+    <div id="staff"></div>
+  </section>
+
+  <div class="workarea">
+    <div class="mapcol">
+      <div class="toolbar">
+        <div class="chips" id="chips"></div>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="scroller"><div class="map" id="map"></div></div>
+    </div>
+    <aside class="detail panel" id="detail" aria-live="polite"></aside>
+  </div>
+</div>
+
+<script type="application/json" id="map-data">__MAP_JSON__</script>
+<script>
+(() => {
+  const D = JSON.parse(document.getElementById("map-data").textContent);
+  const TYPES = D.types;
+  const TC = Object.fromEntries(TYPES.map((t, i) => [t, `var(--t${i})`]));
+  const cats = D.categories;
+  const catById = Object.fromEntries(cats.map(c => [c.id, c]));
+  const staffById = Object.fromEntries(D.staff.map(s => [s.id, s]));
+  const nodes = D.nodes;
+  const nodeById = Object.fromEntries(nodes.map(n => [n.id, n]));
+  const links = D.links.filter(([a, b]) => nodeById[a] && nodeById[b]);
+  const outs = {}, ins = {};
+  links.forEach(([a, b]) => { (outs[a] ||= []).push(b); (ins[b] ||= []).push(a); });
+  const waiting = n => n.waiting === "本人" || n.who === "本人";
+  const whoName = w => w === "本人" || w === "統括" ? w : (staffById[w]?.name || w);
+
+  const $ = id => document.getElementById(id);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+  $("meta").textContent = `更新 ${D.updated} ・ ${cats.length}カテゴリ ・ ${nodes.length}項目 ・ つながり ${links.length}本`;
+
+  // ---- あなた待ち ----
+  const waits = nodes.filter(waiting);
+  $("waitcount").textContent = `${waits.length}件`;
+  waits.forEach(n => {
+    const li = el("li"); const b = el("button");
+    b.append(el("span", "cat", catById[n.cat].name), el("span", "ttl", n.title));
+    b.addEventListener("click", () => select(n.id, true));
+    li.append(b); $("waitlist").append(li);
+  });
+
+  // ---- 根拠にした求人 ----
+  (D.postings || []).forEach(p => {
+    const li = el("li"); li.append(el("div", "pn", p.name));
+    if (p.must) { const r = el("div", "pr"); r.append(el("b", null, "必須 "), p.must); li.append(r); }
+    if (p.want) { const r = el("div", "pr"); r.append(el("b", null, "歓迎 "), p.want); li.append(r); }
+    $("postings").append(li);
+  });
+
+  // ---- AI社員（採用の優先度ごと） ----
+  const domName = Object.fromEntries((D.domains || []).map(d => [d.id, d.name]));
+  (D.tiers || [{ id: undefined, name: "", note: "" }]).forEach(t => {
+    const members = D.staff.filter(s => s.tier === t.id);
+    if (!members.length) return;
+    const box = el("div", "tier");
+    const h = el("h3", null, t.name); h.append(el("small", null, t.note)); box.append(h);
+    const grid = el("div", "staffgrid");
+    members.forEach(s => {
+      const b = el("button", "staff");
+      const nm = el("div", "nm", s.name); nm.append(el("small", null, s.kana));
+      const tags = el("div", "tags");
+      tags.append(el("span", "badge who", domName[s.domain] || ""));
+      if (s.lead) tags.append(el("span", "badge", "リーダー"));
+      const lv = el("div", "lv"); lv.append("レベル ", el("b", null, s.now), ` → ${s.goal}（2027年秋）`);
+      b.append(nm, el("div", "sk", s.skill), tags, lv, el("div", "why", `採用の理由: ${s.reason}`));
+      b.addEventListener("click", () => showStaff(s));
+      grid.append(b);
+    });
+    box.append(grid); $("staff").append(box);
+  });
+  function showStaff(s) {
+    const rows = cats.filter(c => c.owner === s.id).map(c => c.id);
+    if (rows.length) { shown.clear(); rows.forEach(r => shown.add(r)); applyFilter(); }
+    selected = null; chain = new Set(); paintFocus();
+    const d = $("detail"); d.replaceChildren(); d.style.removeProperty("--tc");
+    d.append(el("span", "pill", s.tier === "must" ? "必須要件" : s.tier === "want" ? "歓迎・仕事内容" : "独自テーマ"));
+    d.append(el("h3", null, `${s.name}（${s.kana}）`), el("p", "meta", `${domName[s.domain] || ""}領域${s.lead ? "のリーダー" : ""} ・ 入社 ${s.hired || ""}`));
+    d.append(el("p", null, `履歴書のスキル: ${s.skill}`), el("p", null, `レベル ${s.now} → ${s.goal}（2027年秋）`));
+    d.append(el("p", null, `採用の理由: ${s.reason}`), el("p", null, `今、履歴書に書けること: ${s.resume}`));
+    const nx = nodes.filter(n => n.who === s.id);
+    d.append(relButtons("この担当の次回", nx.map(n => n.id)));
+    if (!rows.length) d.append(el("p", "hint", "このスキルの行はまだありません。仕事が始まったら地図に足します。"));
+    const cl = el("button", "clear", "すべて表示に戻す"); cl.addEventListener("click", () => { cats.forEach(c => shown.add(c.id)); applyFilter(); renderDetail(); }); d.append(cl);
+    d.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  // ---- 凡例とカテゴリの絞り込み ----
+  TYPES.forEach(t => { const s = el("span"); const i = el("i"); i.style.background = TC[t]; s.append(i, t); $("legend").append(s); });
+  const ld = el("span"); const dash = el("i", "dash"); ld.append(dash, "カテゴリをまたぐつながり"); $("legend").append(ld);
+  const shown = new Set(cats.map(c => c.id));
+  const allChip = el("button", "chip", "すべて");
+  allChip.addEventListener("click", () => { cats.forEach(c => shown.add(c.id)); applyFilter(); });
+  $("chips").append(allChip);
+  const chipEls = {};
+  cats.forEach(c => {
+    const b = el("button", "chip", c.name);
+    b.addEventListener("click", () => { shown.has(c.id) ? shown.delete(c.id) : shown.add(c.id); if (!shown.size) cats.forEach(x => shown.add(x.id)); applyFilter(); });
+    chipEls[c.id] = b; $("chips").append(b);
+  });
+  function setOnly(cat) { shown.clear(); shown.add(cat); applyFilter(); $("map").scrollIntoView({ block: "start", behavior: "smooth" }); }
+
+  // ---- 地図 ----
+  const map = $("map");
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.innerHTML = '<defs><marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z"/></marker><marker id="arr-on" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 z"/></marker></defs>';
+  map.append(svg);
+  map.append(el("div", "colhead", "カテゴリ / 担当"));
+  TYPES.forEach(t => { const h = el("div", "colhead", t); h.style.color = TC[t]; map.append(h); });
+  const rowEls = {}, cardEls = {};
+  cats.forEach(c => {
+    const row = [];
+    const rh = el("div", "rowhead");
+    const cn = nodes.filter(n => n.cat === c.id);
+    rh.append(el("div", "rn", c.name), el("div", "ow", `担当 ${whoName(c.owner) || "—"}`),
+      el("div", "st", `課題 ${cn.filter(n => n.type === "課題").length} ・ 次回 ${cn.filter(n => n.type === "次回").length}`));
+    row.push(rh); map.append(rh);
+    TYPES.forEach(t => {
+      const cell = el("div", "cell");
+      cn.filter(n => n.type === t).forEach(n => {
+        const b = el("button", "card"); b.style.setProperty("--tc", TC[t]); b.dataset.id = n.id;
+        b.append(el("div", "ttl", n.title));
+        if (n.date) b.append(el("div", "dt", n.date));
+        const bd = el("div", "badges");
+        if (waiting(n)) bd.append(el("span", "badge wait", "あなた待ち"));
+        if (n.who && n.who !== "本人") bd.append(el("span", "badge who", `担当 ${whoName(n.who)}`));
+        if (bd.childNodes.length) b.append(bd);
+        b.addEventListener("click", () => select(selected === n.id ? null : n.id));
+        cardEls[n.id] = b; cell.append(b);
+      });
+      row.push(cell); map.append(cell);
+    });
+    rowEls[c.id] = row;
+  });
+
+  const colOf = id => TYPES.indexOf(nodeById[id].type);
+  function draw() {
+    svg.querySelectorAll("path.edge").forEach(p => p.remove());
+    svg.setAttribute("width", map.scrollWidth); svg.setAttribute("height", map.scrollHeight);
+    const box = map.getBoundingClientRect();
+    links.forEach(([a, b]) => {
+      if (!shown.has(nodeById[a].cat) || !shown.has(nodeById[b].cat)) return;
+      const ra = cardEls[a].getBoundingClientRect(), rb = cardEls[b].getBoundingClientRect();
+      const L = r => r.left - box.left, R = r => r.right - box.left, T = r => r.top - box.top, B = r => r.bottom - box.top, M = r => (r.top + r.bottom) / 2 - box.top;
+      let d;
+      const ca = colOf(a), cb = colOf(b);
+      if (cb > ca) {
+        const x1 = R(ra), y1 = M(ra), x2 = L(rb) - 2, y2 = M(rb), dx = Math.max(30, (x2 - x1) / 2);
+        d = `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`;
+      } else if (cb === ca) {
+        const x1 = R(ra), y1 = M(ra), x2 = R(rb) + 2, y2 = M(rb);
+        d = `M${x1},${y1} C${x1 + 28},${y1} ${x2 + 28},${y2} ${x2},${y2}`;
+      } else {
+        const x1 = (L(ra) + R(ra)) / 2, y1 = T(ra), x2 = (L(rb) + R(rb)) / 2, y2 = T(rb) - 2, up = Math.min(y1, y2) - 26;
+        d = `M${x1},${y1} C${x1},${up} ${x2},${up} ${x2},${y2}`;
+      }
+      const p = document.createElementNS(svgNS, "path");
+      p.setAttribute("d", d);
+      p.setAttribute("class", "edge" + (nodeById[a].cat !== nodeById[b].cat ? " cross" : ""));
+      p.dataset.a = a; p.dataset.b = b;
+      svg.append(p);
+    });
+    paintFocus();
+  }
+
+  // ---- 選んだカードのつながりを光らせる ----
+  let selected = null, chain = new Set();
+  function walk(start, next) { const seen = new Set([start]); const q = [start]; while (q.length) { const x = q.shift(); (next[x] || []).forEach(y => { if (!seen.has(y)) { seen.add(y); q.push(y); } }); } return seen; }
+  function paintFocus() {
+    map.classList.toggle("focus", !!selected);
+    Object.entries(cardEls).forEach(([id, e]) => { e.classList.toggle("on", chain.has(id)); e.classList.toggle("sel", id === selected); });
+    svg.querySelectorAll("path.edge").forEach(p => {
+      const on = !!selected && chain.has(p.dataset.a) && chain.has(p.dataset.b);
+      p.classList.toggle("on", on);
+      p.setAttribute("marker-end", on ? "url(#arr-on)" : "url(#arr)");
+    });
+  }
+  function select(id, reveal) {
+    selected = id;
+    chain = id ? new Set([...walk(id, outs), ...walk(id, ins)]) : new Set();
+    if (id && !shown.has(nodeById[id].cat)) { shown.add(nodeById[id].cat); applyFilter(); }
+    paintFocus(); renderDetail();
+    if (id && reveal) cardEls[id].scrollIntoView({ block: "center", inline: "center", behavior: "smooth" });
+  }
+  function relButtons(title, ids) {
+    const box = el("div", "rel"); box.append(el("h4", null, title));
+    if (!ids.length) box.append(el("div", "hint", "なし"));
+    ids.forEach(i => { const n = nodeById[i]; const b = el("button", null, `${n.type}｜${n.title}`); b.style.setProperty("--tc", TC[n.type]); b.addEventListener("click", () => select(i, true)); box.append(b); });
+    return box;
+  }
+  function renderDetail() {
+    const d = $("detail"); d.replaceChildren();
+    if (!selected) {
+      d.append(el("h2", null, "使い方"),
+        el("p", "hint", "カードを選ぶと、そこにつながる経緯・方針・進捗・結果・課題・次回が光り、ほかは薄くなります。"),
+        el("p", "hint", "上の「AI社員」を選ぶと、そのカテゴリだけを表示します。「あなた待ち」は、本人の判断や操作が必要な項目です。"));
+      return;
+    }
+    const n = nodeById[selected], c = catById[n.cat];
+    d.style.setProperty("--tc", TC[n.type]);
+    const pill = el("span", "pill", n.type);
+    d.append(pill, el("h3", null, n.title));
+    d.append(el("p", "meta", `${c.name} ・ 担当 ${whoName(c.owner) || "—"}${n.date ? " ・ " + n.date : ""}${n.who ? " ・ やる人 " + whoName(n.who) : ""}`));
+    if (n.detail) d.append(el("p", null, n.detail));
+    if (n.ref) d.append(el("p", "ref", n.ref));
+    d.append(relButtons("ここにつながる（前）", ins[n.id] || []), relButtons("ここから続く（後）", outs[n.id] || []));
+    const cl = el("button", "clear", "選択を解除"); cl.addEventListener("click", () => select(null)); d.append(cl);
+  }
+
+  function applyFilter() {
+    cats.forEach(c => { const on = shown.has(c.id); rowEls[c.id].forEach(e => e.style.display = on ? "" : "none"); chipEls[c.id].setAttribute("aria-pressed", on && shown.size < cats.length ? "true" : "false"); });
+    allChip.setAttribute("aria-pressed", shown.size === cats.length ? "true" : "false");
+    if (selected && !shown.has(nodeById[selected].cat)) select(null);
+    requestAnimationFrame(draw);
+  }
+
+  new ResizeObserver(() => requestAnimationFrame(draw)).observe(map);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => requestAnimationFrame(draw));
+  applyFilter(); renderDetail();
+})();
+</script>
+</body>
+</html>
