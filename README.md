@@ -1,11 +1,27 @@
 # AI社員と進捗マップのテンプレ
 
-Claude Code の**サブエージェント**を「AI社員」として採用し、その仕事を**進捗マップ**（経緯・方針・進捗・結果・課題・次回のつながりを一目で見るページ）で追いかけるためのテンプレです。
+> Hire Claude Code subagents as "AI staff" from job-posting requirements, and track their work on a one-page progress map (JSON + HTML, Japanese).
 
-- **AI社員**: 人を採用するように、**求人の必須要件 → 歓迎要件・仕事内容 → 独自テーマ**の順に担当を決めます。1つのスキルに1人。各担当の目的は、そのスキルを「履歴書に書ける実績」にすることです
-- **進捗マップ**: JSON 1つと HTML 1枚。担当の報告を JSON に足して、スクリプトを1回実行するとページができます
+## 何ができるか
+
+- Claude Code の**サブエージェント**を、求人の要件から「AI社員」として採用し、1つのスキルに1人ずつ担当を決められます
+- 担当の報告（経緯・方針・進捗・結果・課題・次回）を JSON に足すと、つながりが線で見える**進捗マップ**のページが1枚できます
+- 「あなた待ち」（本人の判断や操作が要る項目）と、根拠にした求人・採用した担当が、同じページの上に並びます
+
+![進捗マップの見本。上に「あなた待ち」「根拠にした求人」「AI社員」、下に経緯から次回までを線でつないだ地図](docs/screenshot.png)
 
 中身はすべて見本（架空の人と架空の求人）です。【】の中や見本の値を、自分の内容に書き換えて使ってください。
+
+## 使い方（3手順）
+
+1. `progress-map/map.json` を書き換える（まずは見本のまま次へ進んでもよい）
+2. `build.ps1` を実行する
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .\progress-map\build.ps1
+   ```
+3. できた `progress-map/index.html` をブラウザで開く
+
+AI社員として使うには、`agents/*.md` を Claude Code のエージェントの置き場所に置きます（下の「置き場所」）。
 
 ## フォルダの中身
 
@@ -21,7 +37,10 @@ ai-staff-template/
 │   ├── map.json           データ（見本: 3カテゴリ・16項目）
 │   ├── template.html      ページのひな形（ふつうは触らない）
 │   └── build.ps1          map.json を template.html に埋め込んで index.html を作る
+├── docs/
+│   └── screenshot.png     見本のページの画像
 ├── README.md
+├── PUBLISH_CHECKLIST.md   このテンプレを公開する前に確かめたこと
 └── LICENSE                MIT
 ```
 
@@ -184,7 +203,11 @@ macOS / Linux は PowerShell 7（`pwsh`）で `pwsh progress-map/build.ps1` を�
 - `detail` などに `</script>` という文字を書くと、ページが壊れます
 
 ## 公開するとき
-自分用に書き換えた定義や map.json には、名前・勤め先・リポジトリ・PC のユーザー名（`C:\Users\...` のパス）が入りがちです。公開する前に全ファイルと `git log` を確かめ、コミットのメールは GitHub の noreply アドレスにしてください。
+自分用に書き換えた定義や map.json には、名前・勤め先・リポジトリ・PC のユーザー名（`C:\Users\...` のパス）が入りがちです。公開する前に全ファイルと `git log` を確かめ、コミットのメールは GitHub の noreply アドレスにしてください。このテンプレ自体を公開する前に確かめたことは `PUBLISH_CHECKLIST.md` にあります。
 
 ## ライセンス
-MIT（`LICENSE` を参照）
+MIT（`LICENSE` を参照）。自由に使い、書き換え、再配布できます。
+
+---
+
+English: Hire Claude Code subagents as "AI staff" from job-posting requirements, and track their work on a one-page progress map (JSON + HTML, Japanese). All sample data is fictional. MIT License.
